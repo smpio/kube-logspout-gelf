@@ -64,10 +64,6 @@ func (a *GelfAdapter) Stream(logstream chan *router.Message) {
 			Level:    level,
 			RawExtra: extra,
 		}
-		// 	ContainerId:    m.Container.ID,
-		// 	ContainerImage: m.Container.Config.Image,
-		// 	ContainerName:  m.Container.Name,
-		// }
 
 		// here be message write.
 		if err := a.writer.WriteMessage(&msg); err != nil {
@@ -82,7 +78,6 @@ type GelfMessage struct {
 }
 
 func (m GelfMessage) getExtraFields() (json.RawMessage, error) {
-
 	extra := map[string]interface{}{
 		"_container_id":   m.Container.ID,
 		"_container_name": m.Container.Name[1:], // might be better to use strings.TrimLeft() to remove the first /
