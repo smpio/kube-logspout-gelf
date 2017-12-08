@@ -1,11 +1,12 @@
-# Graylog GELF Module for Logspout
+# Graylog GELF Module for Logspout adopted for Kubernetes
+
 This module allows Logspout to send Docker logs in the GELF format to Graylog via UDP.
 
 ## Build
 To build, you'll need to fork [Logspout](https://github.com/gliderlabs/logspout), add the following code to `modules.go` 
 
 ```
-_ "github.com/micahhausler/logspout-gelf"
+_ "github.com/smpio/kube-logspout-gelf"
 ```
 and run `docker build -t $(whoami)/logspout:gelf`
 
@@ -14,8 +15,7 @@ and run `docker build -t $(whoami)/logspout:gelf`
 ```
 docker run \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    -p 8000:80 \
-    micahhausler/logspout:gelf \
+    $(whoami)/logspout:gelf \
     gelf://<graylog_host>:12201
 
 ```
@@ -25,20 +25,16 @@ The following docker container attributes are mapped to the corresponding GELF e
 
 ```
 {
-        "_container_id":   <container-id>,
-        "_container_name": <container-name>,
-        "_image_id":       <container-image-sha>,
-        "_image_name":     <container-image-name>,
-        "_command":        <container-cmd>,
-        "_created":        <container-created-date>,
-        "_swarm_node":     <host-if-running-on-swarm>
+        "_kube_namespace": <namespace>,
+        "_kube_container": <container-name>,
+        "_process_id":     <pid>,
+        "source":          <pod-name>,
 }
 ```
 
-You can also add extra custom fields by adding labels to the containers.
+You can also add extra custom fields by setting env vars with prefix `KUBE_`.
 
-for example 
-a container with label ```gelf_service=servicename``` will have the extra field service
+For example by setting `KUBE_NODE=node1` will add the extra field `_kube_node=node1`.
 
 
 
