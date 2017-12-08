@@ -11,10 +11,7 @@ import (
 	"time"
 )
 
-var hostname string
-
 func init() {
-	hostname, _ = os.Hostname()
 	router.AdapterFactories.Register(NewGelfAdapter, "gelf")
 }
 
@@ -58,7 +55,7 @@ func (a *GelfAdapter) Stream(logstream chan *router.Message) {
 
 		msg := gelf.Message{
 			Version:  "1.1",
-			Host:     hostname,
+			Host:     m.Container.Config.Hostname,
 			Short:    m.Message.Data,
 			TimeUnix: float64(m.Message.Time.UnixNano()/int64(time.Millisecond)) / 1000.0,
 			Level:    level,
