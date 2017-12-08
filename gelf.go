@@ -11,8 +11,19 @@ import (
 	"time"
 )
 
+var extraPrototype map[string]string
+
 func init() {
 	router.AdapterFactories.Register(NewGelfAdapter, "gelf")
+
+	extraPrototype = map[string]string{}
+	for _, assignment := range os.Environ() {
+		if strings.HasPrefix(assignment, "KUBE_") {
+			pair := strings.SplitN(assignment, "=", 2)
+			key, value := pair[0], pair[1]
+			extraPrototype["_" + strings.ToLower(key)] = value
+		}
+	}
 }
 
 // GelfAdapter is an adapter that streams UDP JSON to Graylog
@@ -75,19 +86,16 @@ type GelfMessage struct {
 }
 
 func (m GelfMessage) getExtraFields() (json.RawMessage, error) {
-	nameParts := strings.Split(m.Container.Name, "_")
-
-	extra := map[string]interface{}{
-		"_kube_namespace": nameParts[3],
-		"_kube_container": nameParts[1],
+	extra := map[string]string{}
+	for key, value := range extraPrototype {
+		extra[key] = value
 	}
 
-	for _, assignment := range os.Environ() {
-		if strings.HasPrefix(assignment, "KUBE_") {
-			pair := strings.SplitN(assignment, "=", 2)
-			key, value := pair[0], pair[1]
-			extra["_" + strings.ToLower(key)] = value
-		}
+	// format: k8s_CONTAINER_POD_NAMESPACE_UID_0
+	nameParts := strings.Split(m.Container.Name, "_")
+	if len(nameParts) == 6 {
+		extra["_kube_container"] = nameParts[1]
+		extra["_kube_namespace"] = nameParts[3]
 	}
 
 	return json.Marshal(extra)
