@@ -27,7 +27,6 @@ The following docker container attributes are mapped to the corresponding GELF e
 {
         "_kube_namespace": <namespace>,
         "_kube_container": <container-name>,
-        "_process_id":     <pid>,
         "host":            <pod-name>,
 }
 ```

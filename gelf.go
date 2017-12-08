@@ -75,27 +75,20 @@ type GelfMessage struct {
 }
 
 func (m GelfMessage) getExtraFields() (json.RawMessage, error) {
+	nameParts := strings.Split(m.Container.Name, "_")
+
 	extra := map[string]interface{}{
-		"_container_id":   m.Container.ID,
-		"_container_name": m.Container.Name[1:], // might be better to use strings.TrimLeft() to remove the first /
-		"_image_id":       m.Container.Image,
-		"_image_name":     m.Container.Config.Image,
-		"_command":        strings.Join(m.Container.Config.Cmd[:], " "),
-		"_created":        m.Container.Created,
-	}
-	for name, label := range m.Container.Config.Labels {
-		if strings.ToLower(name[0:5]) == "gelf_" {
-			extra[name[4:]] = label
-		}
-	}
-	swarmnode := m.Container.Node
-	if swarmnode != nil {
-		extra["_swarm_node"] = swarmnode.Name
+		"_kube_namespace": nameParts[3],
+		"_kube_container": nameParts[1],
 	}
 
-	rawExtra, err := json.Marshal(extra)
-	if err != nil {
-		return nil, err
+	for _, assignment := range os.Environ() {
+		if strings.HasPrefix(assignment, "KUBE_") {
+			pair := strings.SplitN(assignment, "=", 2)
+			key, value := pair[0], pair[1]
+			extra["_" + strings.ToLower(key)] = value
+		}
 	}
-	return rawExtra, nil
+
+	return json.Marshal(extra)
 }
